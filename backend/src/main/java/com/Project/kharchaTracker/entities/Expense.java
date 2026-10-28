@@ -17,6 +17,7 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long expenseID;
 
+    @Column(nullable = false, unique = true)
     private String title;
     private BigDecimal amount;
     private LocalDate date;
