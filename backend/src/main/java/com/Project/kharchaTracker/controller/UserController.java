@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.controller;
 import com.Project.kharchaTracker.dto.CreateUserDto;
 import com.Project.kharchaTracker.dto.UserDto;
 import com.Project.kharchaTracker.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody CreateUserDto createUserDto) {
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserDto createUserDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(createUserDto));
     }
 
