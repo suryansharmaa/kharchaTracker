@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.service;
 import com.Project.kharchaTracker.dto.CreateUserDto;
 import com.Project.kharchaTracker.dto.UserDto;
 import com.Project.kharchaTracker.entities.User;
+import com.Project.kharchaTracker.exception.UserNotFoundException;
 import com.Project.kharchaTracker.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,9 +51,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserDto getUserById(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = userRepository.findById(userId).
+                orElseThrow(() -> new UserNotFoundException("User not found with Id : "+ userId));
         return new UserDto(user.getUserId(), user.getName(), user.getEmail());
     }
 
