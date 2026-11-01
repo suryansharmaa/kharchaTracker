@@ -4,6 +4,9 @@ import com.Project.kharchaTracker.dto.CreateUserDto;
 import com.Project.kharchaTracker.dto.UserDto;
 import com.Project.kharchaTracker.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,12 +39,12 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @RequestBody CreateUserDto updateUserDto) {
+    public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @Valid @RequestBody CreateUserDto updateUserDto) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(userId, updateUserDto));
     }
 
     @PatchMapping("/{userId}")
-    public ResponseEntity<UserDto> patchUser(@PathVariable String userId, @RequestBody CreateUserDto patchUserDto) {
+    public ResponseEntity<UserDto> patchUser(@PathVariable String userId, @Valid @RequestBody CreateUserDto patchUserDto) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.patchUser(userId, patchUserDto));
     }
 
@@ -52,10 +55,13 @@ public class UserController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<List<UserDto>> getAllUsersPaginated(@RequestParam int page,
-                                                              @RequestParam int pageSize,
-                                                              @RequestParam String sortBy,
-                                                              @RequestParam String direction) {
+    public ResponseEntity<List<UserDto>> getAllUsersPaginated(@RequestParam @Min(value = 0, message = "page must be 0 or more") int page,
+                                                              @RequestParam @Min(value = 5, message = "pageSize must be at least 5")
+                                                                            @Max(value = 50, message = "pageSize can't exceed 50") int pageSize,
+                                                              @RequestParam(defaultValue = "name")
+                                                                            @Pattern(regexp = "name|email", message = "sortBy must be name or email") String sortBy,
+                                                              @RequestParam(defaultValue = "asc")
+                                                                            @Pattern(regexp = "(?i)(asc|desc)", message = "direction must be asc or desc") String direction) {
 
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsersPaginated(page, pageSize, sortBy, direction));
     }

@@ -7,6 +7,9 @@ import com.Project.kharchaTracker.dto.UserDto;
 import com.Project.kharchaTracker.entities.Category;
 import com.Project.kharchaTracker.entities.Expense;
 import com.Project.kharchaTracker.entities.User;
+import com.Project.kharchaTracker.exception.CategoryNotFoundException;
+import com.Project.kharchaTracker.exception.ExpenseNotFoundException;
+import com.Project.kharchaTracker.exception.UserNotFoundException;
 import com.Project.kharchaTracker.repository.CategoryRepository;
 import com.Project.kharchaTracker.repository.ExpenseRepository;
 import com.Project.kharchaTracker.repository.UserRepository;
@@ -32,15 +35,21 @@ public class ExpenseService {
         this.categoryRepository = categoryRepository;
     }
 
+    private Expense findOwnedExpense(String userId, Long expenseId) {
+        return expenseRepository.findByExpenseIdAndUserUserId(expenseId, userId)
+                .orElseThrow(() -> new ExpenseNotFoundException(expenseId));
+    }
+
+    private User findUserOrThrow(String userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
     @Transactional
     public ExpenseDto createExpense(String userId, CreateExpenseDto createExpenseDto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = findUserOrThrow(userId);
 
-        Category category = categoryRepository.findById(createExpenseDto.getCategoryId()).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Category not found with ID : " + createExpenseDto.getCategoryId()
-        ));
+        Category category = categoryRepository.findById(createExpenseDto.getCategoryId()).orElseThrow(() ->
+                new CategoryNotFoundException(createExpenseDto.getCategoryId()));
 
         Expense expense = new Expense();
         expense.setTitle(createExpenseDto.getTitle());
@@ -57,15 +66,13 @@ public class ExpenseService {
         CategoryDto savedCategory = new CategoryDto(savedExpense.getCategory().getCategoryId(),
                 savedExpense.getCategory().getCategoryName());
 
-        return new ExpenseDto(savedExpense.getExpenseID(), savedExpense.getTitle(), savedExpense.getAmount(),
+        return new ExpenseDto(savedExpense.getExpenseId(), savedExpense.getTitle(), savedExpense.getAmount(),
                 savedExpense.getDate(), savedUser, savedCategory);
     }
 
     @Transactional(readOnly = true)
     public List<ExpenseDto> getAllExpenses(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = findUserOrThrow(userId);
         UserDto userDto = new UserDto(user.getUserId(), user.getName(), user.getEmail());
 
         List<ExpenseDto> expenseDtoList = new ArrayList<>();
@@ -76,7 +83,7 @@ public class ExpenseService {
                     expense.getCategory().getCategoryName());
 
 
-            expenseDtoList.add(new ExpenseDto(expense.getExpenseID(), expense.getTitle(), expense.getAmount(),
+            expenseDtoList.add(new ExpenseDto(expense.getExpenseId(), expense.getTitle(), expense.getAmount(),
                     expense.getDate(), userDto, categoryDto));
         }
 
@@ -85,23 +92,17 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseDto updateExpense(String userId, Long expenseId, CreateExpenseDto updateExpenseDto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = findUserOrThrow(userId);
+        Expense expense = findOwnedExpense(userId, expenseId);
 
         UserDto userDto = new UserDto(user.getUserId(), user.getName(), user.getEmail());
-
-        Expense expense = expenseRepository.findById(expenseId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Expense not found with ID : " + expenseId
-        ));
 
         if (!Objects.equals(userId, expense.getUser().getUserId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Expense not found");
         }
 
-        Category category = categoryRepository.findById(updateExpenseDto.getCategoryId()).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Category not found with ID : " + updateExpenseDto.getCategoryId()
-        ));
+        Category category = categoryRepository.findById(updateExpenseDto.getCategoryId()).orElseThrow(() ->
+                new CategoryNotFoundException(updateExpenseDto.getCategoryId()));
 
         CategoryDto categoryDto = new CategoryDto(category.getCategoryId(), category.getCategoryName());
 
@@ -111,20 +112,15 @@ public class ExpenseService {
         expense.setCategory(category);
         expense.setUser(user);
 
-        return new ExpenseDto(expense.getExpenseID(), expense.getTitle(), expense.getAmount(),
+        return new ExpenseDto(expense.getExpenseId(), expense.getTitle(), expense.getAmount(),
                 expense.getDate(), userDto, categoryDto);
     }
 
 
     @Transactional
     public void deleteExpenseById(String userId, Long expenseId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
-
-        Expense expense = expenseRepository.findById(expenseId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Expense not found with ID : " + expenseId
-        ));
+        User user = findUserOrThrow(userId);
+        Expense expense = findOwnedExpense(userId, expenseId);
 
         if (!Objects.equals(userId, expense.getUser().getUserId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Expense not found");

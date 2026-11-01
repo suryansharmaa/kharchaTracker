@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.service;
 import com.Project.kharchaTracker.dto.CreateUserDto;
 import com.Project.kharchaTracker.dto.UserDto;
 import com.Project.kharchaTracker.entities.User;
+import com.Project.kharchaTracker.exception.EmailAlreadyExistsException;
 import com.Project.kharchaTracker.exception.UserNotFoundException;
 import com.Project.kharchaTracker.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 @Service
@@ -27,8 +29,17 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    private User findUserOrThrow(String userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
     @Transactional
     public UserDto createUser(CreateUserDto createUserDto) {
+        String email = createUserDto.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException();
+        }
+
         User user = new User();
         user.setName(createUserDto.getName());
         user.setEmail(createUserDto.getEmail());
@@ -51,16 +62,16 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserDto getUserById(String userId) {
-        User user = userRepository.findById(userId).
-                orElseThrow(() -> new UserNotFoundException("User not found with Id : "+ userId));
+        User user = findUserOrThrow(userId);
         return new UserDto(user.getUserId(), user.getName(), user.getEmail());
     }
 
     @Transactional
     public UserDto updateUser(String userId, CreateUserDto updateUserDto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = findUserOrThrow(userId);
+
+        String email = updateUserDto.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmailAndUserIdNot(email, userId)) throw new EmailAlreadyExistsException();
 
         user.setName(updateUserDto.getName());
         user.setEmail(updateUserDto.getEmail());
@@ -70,9 +81,10 @@ public class UserService {
 
     @Transactional
     public UserDto patchUser(String userId, CreateUserDto patchUserDto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
+        User user = findUserOrThrow(userId);
+
+        String email = patchUserDto.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmailAndUserIdNot(email, userId)) throw new EmailAlreadyExistsException();
 
         if (patchUserDto.getEmail() != null) user.setEmail(patchUserDto.getEmail());
         if (patchUserDto.getName() != null) user.setName(patchUserDto.getName());
@@ -82,10 +94,7 @@ public class UserService {
 
     @Transactional
     public void deleteUserById(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found with ID : " + userId
-        ));
-
+        User user = findUserOrThrow(userId);
         userRepository.delete(user);
     }
 

@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.controller;
 import com.Project.kharchaTracker.dto.CategoryDto;
 import com.Project.kharchaTracker.dto.CreateCategoryDto;
 import com.Project.kharchaTracker.service.CategoryService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDto> createCategory(@RequestBody CreateCategoryDto createCategoryDto) {
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CreateCategoryDto createCategoryDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(createCategoryDto));
     }
 

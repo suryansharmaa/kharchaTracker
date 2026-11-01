@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.controller;
 import com.Project.kharchaTracker.dto.CreateExpenseDto;
 import com.Project.kharchaTracker.dto.ExpenseDto;
 import com.Project.kharchaTracker.service.ExpenseService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public ResponseEntity<ExpenseDto> createExpense(@PathVariable String userId, @RequestBody CreateExpenseDto createExpenseDto) {
+    public ResponseEntity<ExpenseDto> createExpense(@PathVariable String userId, @Valid @RequestBody CreateExpenseDto createExpenseDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(expenseService.createExpense(userId, createExpenseDto));
     }
 
@@ -31,7 +32,7 @@ public class ExpenseController {
 
     @PutMapping("/{expenseId}")
     public ResponseEntity<ExpenseDto> updateExpense(@PathVariable String userId, @PathVariable Long expenseId,
-                                                    @RequestBody CreateExpenseDto updateExpenseDto) {
+                                                    @Valid @RequestBody CreateExpenseDto updateExpenseDto) {
 
         return ResponseEntity.status(HttpStatus.OK).body(expenseService.updateExpense(userId, expenseId, updateExpenseDto));
     }

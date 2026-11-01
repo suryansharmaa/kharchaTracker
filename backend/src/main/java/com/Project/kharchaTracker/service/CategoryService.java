@@ -3,6 +3,7 @@ package com.Project.kharchaTracker.service;
 import com.Project.kharchaTracker.dto.CategoryDto;
 import com.Project.kharchaTracker.dto.CreateCategoryDto;
 import com.Project.kharchaTracker.entities.Category;
+import com.Project.kharchaTracker.exception.CategoryAlreadyExistsException;
 import com.Project.kharchaTracker.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,11 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto createCategory(CreateCategoryDto createCategoryDto) {
+        String name = createCategoryDto.getCategoryName();
+        if (categoryRepository.existsByCategoryNameIgnoreCase(name)) {
+            throw new CategoryAlreadyExistsException();
+        }
+
         Category category = new Category();
         category.setCategoryName(createCategoryDto.getCategoryName());
 
